@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI LMS Platform</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+header {
+  background: #1e293b;
+  padding: 15px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background: #111827;
+  padding: 15px;
+}
+
+.sidebar button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.sidebar button:hover {
+  background: #1d4ed8;
+}
+
+.main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.card {
+  background: #1f2937;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+}
+
+textarea {
+  width: 100%;
+  height: 80px;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 5px;
+  border: none;
+  resize: none;
+}
+
+.chat {
+  height: 300px;
+  overflow-y: auto;
+  background: #0b1220;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.user {
+  color: #38bdf8;
+  margin-bottom: 8px;
+}
+
+.ai {
+  color: #34d399;
+  margin-bottom: 8px;
+}
+
+.send-btn {
+  margin-top: 10px;
+  padding: 10px 15px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.send-btn:hover {
+  background: #059669;
+}
+</style>
+</head>
+
+<body>
+
+<header>🚀 AI LMS Platform</header>
+
+<div class="container">
+
+  <div class="sidebar">
+    <button onclick="showPage('dashboard')">Dashboard</button>
+    <button onclick="showPage('courses')">Courses</button>
+    <button onclick="showPage('ai')">AI Tutor</button>
+    <button onclick="showPage('payment')">Payment</button>
+  </div>
+
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="page">
+      <div class="card">
+        <h2>Welcome</h2>
+        <p>Start your AI learning journey today.</p>
+      </div>
+    </div>
+
+    <!-- Courses -->
+    <div id="courses" class="page" style="display:none;">
+      <div class="card">
+        <h2>Available Courses</h2>
+        <div id="courseList"></div>
+      </div>
+    </div>
+
+    <!-- AI Tutor -->
+    <div id="ai" class="page" style="display:none;">
+      <div class="card">
+        <h2>AI Tutor</h2>
+
+        <div class="chat" id="chat"></div>
+
+        <textarea id="question" placeholder="Ask AI something..."></textarea>
+
+        <button class="send-btn" onclick="askAI()">
+          Send
+        </button>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div id="payment" class="page" style="display:none;">
+      <div class="card">
+        <h2>Payment</h2>
+        <p>Each level costs ₦500</p>
+
+        <button class="send-btn" onclick="pay()">
+          Pay Now
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+// IMPORTANT:
+// Replace this with your REAL Replit backend URL
+const API = "https://your-replit-backend.replit.app/api";
+
+// Navigation
+function showPage(page) {
+  document.querySelectorAll(".page").forEach(p => {
+    p.style.display = "none";
+  });
+
+  document.getElementById(page).style.display = "block";
+}
+
+// Load courses
+async function loadCourses() {
+  try {
+    const res = await fetch(API + "/course");
+    const data = await res.json();
+
+    const list = document.getElementById("courseList");
+    list.innerHTML = "";
+
+    data.forEach(course => {
+      list.innerHTML += `
+        <div class="card">
+          <h3>${course.title}</h3>
+          <p>Level: ${course.level}</p>
+        </div>
+      `;
+    });
+
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+// AI Tutor
+async function askAI() {
+
+  const input = document.getElementById("question");
+  const chat = document.getElementById("chat");
+
+  const message = input.value;
+
+  if (!message) return;
+
+  chat.innerHTML += `
+    <div class="user">
+      You: ${message}
+    </div>
+  `;
+
+  input.value = "";
+
+  try {
+
+    const res = await fetch(API + "/ai/ask", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        question: message
+      })
+    });
+
+    const data = await res.json();
+
+    chat.innerHTML += `
+      <div class="ai">
+        AI: ${data.answer}
+      </div>
+    `;
+
+    chat.scrollTop = chat.scrollHeight;
+
+  } catch (err) {
+
+    chat.innerHTML += `
+      <div class="ai">
+        AI connection failed
+      </div>
+    `;
+  }
+}
+
+// Payment
+async function pay() {
+
+  const email = prompt("Enter your email");
+
+  if (!email) return;
+
+  try {
+
+    const res = await fetch(API + "/payment/pay", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        level: 1
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.status) {
+
+      window.location.href =
+        data.data.authorization_url;
+
+    } else {
+
+      alert("Payment failed");
+
+    }
+
+  } catch (err) {
+
+    alert("Payment error");
+
+  }
+}
+
+// Start
+loadCourses();
+
+</script>
+
+</body>
+</html>
